@@ -167,7 +167,7 @@ def likes(user_id):
     liked = [l.id for l in user.likes]
     messages = db.session.query(Message).filter(Message.id.in_(liked)).order_by((Message.timestamp.desc())).limit(100).all()    
 
-    return render_template('/users/show.html', messages=messages, user=user)
+    return render_template('/users/liked.html', messages=messages, user=user)
 
 
 
