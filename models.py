@@ -4,6 +4,7 @@ from datetime import datetime
 
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import backref
 
 bcrypt = Bcrypt()
 db = SQLAlchemy()
@@ -94,7 +95,7 @@ class User(db.Model):
         nullable=False,
     )
 
-    messages = db.relationship('Message')
+    messages = db.relationship('Message', cascade='all, delete, delete-orphan')
 
     followers = db.relationship(
         "User",
@@ -197,7 +198,7 @@ class Message(db.Model):
         nullable=False,
     )
 
-    user = db.relationship('User')
+    user = db.relationship('User', single_parent=True, cascade='all, delete, delete-orphan')
 
 
 def connect_db(app):

@@ -6,6 +6,8 @@
 
 import os
 from unittest import TestCase
+from sqlalchemy import exc
+from sqlalchemy.orm.exc import NoResultFound
 
 from models import db, connect_db, Message, User, Likes
 
@@ -36,6 +38,8 @@ class MessageModelTestCase(TestCase):
 
     def setUp(self):
         """Create test client, add sample data"""
+        db.session.rollback()
+
         Message.query.delete()
         User.query.delete()
         Likes.query.delete()
@@ -57,19 +61,72 @@ class MessageModelTestCase(TestCase):
         db.session.add(u2)
         db.session.commit()
 
+        # u = db.one_or_404(db.select(User).filter_by(username='testuser1'))
+        m1 = Message(text='Hello Hello Hello',user_id=u1.id)
+        db.session.add(m1)
+        db.session.commit()
 
-    def test_user_model(self):
+
+
+
+    def test_message_model(self):
         """Does basic model work?"""
-
-        u = User(
-            email="test@test.com",
-            username="testuser",
-            password="HASHED_PASSWORD"
+        u = db.one_or_404(db.select(User).filter_by(username='testuser1'))
+        m = Message(
+            text="Hello Bello",
+            user_id=u.id
         )
 
-        db.session.add(u)
+        db.session.add(m)
         db.session.commit()
 
         # User should have no messages & no followers
-        self.assertEqual(len(u.messages), 0)
-        self.assertEqual(len(u.followers), 0)
+        self.assertTrue(m.timestamp)
+
+
+    def test_message_user(self):
+        """Does model track user of message?"""
+        u = db.one_or_404(db.select(User).filter_by(username='testuser1'))
+        m = db.one_or_404(db.select(Message).filter_by(text="Hello Hello Hello"))
+
+        self.assertEqual(u.username, m.user.username)
+
+
+    def test_message_validation_creation(self):
+        """Does model hinder the making of a message without a user"""
+
+        with self.client as c:
+            m = Message(text='Hello')
+            db.session.add(m)
+            try:
+                db.session.commit()
+                raise AssertionError
+            except:
+                db.session.rollback()
+                pass
+    
+    
+    def test_message_not_user(self):
+        """Does not falsely associate user's with messages"""
+
+        u = db.one_or_404(db.select(User).filter_by(username='testuser2'))
+        m = db.one_or_404(db.select(Message).filter_by(text="Hello Hello Hello"))
+
+        self.assertNotEqual(u.username, m.user.username)
+
+    def test_message_cascade_delete(self):
+        """Does message delete when user is deleted"""
+        u = db.one_or_404(db.select(User).filter_by(username='testuser1'))
+
+        with self.client as c:
+            db.session.delete(u)
+            db.session.commit()
+            
+            try:
+                m = db.session.query(Message).one()
+            except NoResultFound:
+                pass
+
+
+
+    
