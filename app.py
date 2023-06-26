@@ -209,6 +209,7 @@ def users_followers(user_id):
         return redirect("/")
 
     user = User.query.get_or_404(user_id)
+    followers = user.followers
     return render_template('users/followers.html', user=user)
 
 
@@ -331,10 +332,15 @@ def messages_destroy(message_id):
         return redirect("/")
 
     msg = Message.query.get(message_id)
-    db.session.delete(msg)
-    db.session.commit()
+    if msg.user_id == g.user.id:
+        db.session.delete(msg)
+        db.session.commit()
 
-    return redirect(f"/users/{g.user.id}")
+        return redirect(f"/users/{g.user.id}")
+    
+    flash("Access unauthorized.", "danger")
+    return redirect("/")
+
 
 
 ##############################################################################

@@ -198,7 +198,7 @@ class Message(db.Model):
         nullable=False,
     )
 
-    user = db.relationship('User', single_parent=True, cascade='all, delete, delete-orphan')
+    user = db.relationship('User')
 
 
 def connect_db(app):
