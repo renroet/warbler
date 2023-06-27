@@ -168,6 +168,3 @@ class MessageViewTestCase(TestCase):
             self.assertIn("@testuser</a>", html)
 
 
-
-
-     
